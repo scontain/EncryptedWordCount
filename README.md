@@ -46,7 +46,7 @@ before starting it with `docker-compose up` again.
 Cleanup after creation of image:
 
 ```bash
-rm -rf encrypted-files/ fspf-file
+rm -rf encrypted-files/ fspf-file myenv client-key.pem client.pem myenv native-files/keytag session.yml
 ```
 
 ## Contacts
