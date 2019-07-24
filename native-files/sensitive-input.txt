@@ -1,0 +1,30 @@
+SCONE File Protection
+SCONE supports the transparent encryption and/or authentication of files. By transparent, we mean that there are no application code changes needed to support this. We support two ways to use the SCONE file protection:
+
+a low-level interface intended to be used at the developer site. We assumet that the developer machine is sufficiently trust worthy. This is made available via command scone fspf and described in this document.
+a high-level interface simplifies the use of the file protection and it does and in particular, takes care of key management. (The high-level interface is not yet available).
+
+Concepts
+The underlying idea of SCONE file protection is that a user specifies that each file is either:
+
+authenticated, i.e., SCONE checks that the content was not modified by some unauthorized entity,
+
+encrypted, i.e., the confidentiality is protected by encryption. Encrypted files are always authenticated, or
+
+not-protected, i.e. SCONE reads and write the files without any extra protection mechanisms. For example, you might use not-protected if your application already encrypts its files or if you need direct access to devices.
+
+Marking all files individually as either authenticated, encrypted, or not-protected would not be very practical. Hence, we support to partition the filesystem into regions: regions do not overlap and each file belongs to exactly one region.
+
+A region is defined by a path. For example, region / is the root region and you could, for example, specify that all files in region / must be authenticated. You can define a second region, for example, region /data/db and that this region is encrypted.
+
+Each file belongs to exactly one region: it belongs to the region that has the longest common path prefix with this file. For example, file /etc/db.conf would belong, in this case, to region / and file /data/db/table.db would belong to region /data/db.
+
+SCONE supports ephemeral regions: files are stored in main memory outside of the enclave. Since the main memory is not protected, we recommend that an ephemeral regions is either authenticated or encrypted. When a program starts, all its ephemeral regions are empty. The only way to add files to an ephemeral region is by the application writing to this region. All files in an ephemeral region are lost when the application exits.
+
+All files that need to be persistent should be stored in a non-ephemeral region instead. We refer to this as a kernel region. For each region, you need to specify if the region is either ephemeral or kernel.
+
+Each region belongs to one of the following six classes:
+
+{ephemeral | kernel} X {not-protected | authenticated | encrypted }
+Password is: Scontain
+

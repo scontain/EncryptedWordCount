@@ -1,0 +1,14 @@
+version: '3.2'
+services:
+    las:
+        image: sconecuratedimages/helloworld:las-sdk2.5
+        devices:
+         - "/dev/isgx"
+    python:
+        image: wordcount
+        devices:
+         - "/dev/isgx"
+        command: sh -c "sleep 10; SCONE_LAS_ADDR=las SCONE_CAS_ADDR=$SCONE_CAS_ADDR SCONE_CONFIG_ID=$SESSION/wordcount python"  
+        depends_on:
+         - las
+        privileged: true

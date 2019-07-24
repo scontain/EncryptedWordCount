@@ -1,0 +1,21 @@
+name: $SESSION
+digest: somedigest
+
+services:
+   - name: wordcount
+     image_name: wordcount
+     mrenclaves: [$MRENCLAVE]
+     tags: [scone-python]
+     command: "python /fspf/encrypted-files/wordcount.py /fspf/encrypted-files/sensitive-input.txt"
+     environment:
+      SCONE_MODE: hw
+     pwd: /
+     fspf_tag: $SCONE_FSPF_TAG
+     fspf_key: $SCONE_FSPF_KEY
+     fspf_path: /fspf/fs.fspf
+
+images:
+   - name: wordcount
+     mrenclaves: [$MRENCLAVE]
+     tags: [scone-python]
+
