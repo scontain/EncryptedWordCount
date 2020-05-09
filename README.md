@@ -51,4 +51,4 @@ rm -rf encrypted-files/ fspf-file myenv client-key.pem client.pem myenv native-f
 
 ## Contacts
 
-&copy; [scontain.com](http://www.scontain.com), July 2019. [Questions or Suggestions?](mailto:info@scontain.com)
+&copy; [scontain.com](http://www.scontain.com), 2020. [Questions or Suggestions?](mailto:info@scontain.com)

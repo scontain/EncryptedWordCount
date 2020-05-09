@@ -1,4 +1,4 @@
-FROM sconecuratedimages/apps:pypy-2.7.15-alpine3.7
+FROM sconecuratedimages/kubernetes:hello-k8s-scone0.1
 
 MAINTAINER Christof Fetzer "christof.fetzer@scontain.com"
 

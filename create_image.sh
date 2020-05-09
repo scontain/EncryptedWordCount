@@ -13,10 +13,16 @@ trap "echo Unexpected error! See log above; exit 1" ERR
 
 # CONFIG Parameters (might change)
 
-export CAS_ADDR=scone.ml
-export CAS_MRENCLAVE="ddfeb98b91c9d32abf532f21faa967186b992811b0d4da893bd029a12cef32c3"
-export CLI_IMAGE="sconecuratedimages/iexec:cli-alpine"
-export PYTHON_MRENCLAVE="cdf1365f51bc0b0193ba1e3c54e672efb45c361bca102e926b7251aaa9a926a8"
+export CAS_ADDR=scone-cas.cf
+
+export SCONE_CAS_IMAGE="sconecuratedimages/services:cas"
+# Not nessecarily access to CAS image, add default
+export CAS_MRENCLAVE=`(docker pull $SCONE_CAS_IMAGE > /dev/null ; docker run -i --rm -e "SCONE_HASH=1" $SCONE_CAS_IMAGE cas) || echo 9a1553cd86fd3358fb4f5ac1c60eb8283185f6ae0e63de38f907dbaab7696794`  # compute MRENCLAVE for current CAS
+
+export CLI_IMAGE="sconecuratedimages/kubernetes:hello-k8s-scone0.1"
+export PYTHON_IMAGE="sconecuratedimages/kubernetes:hello-k8s-scone0.1"
+
+export PYTHON_MRENCLAVE=`docker pull $PYTHON_IMAGE > /dev/null ; docker run -i --rm -e "SCONE_HASH=1" $PYTHON_IMAGE python`
 
 # create random and hence, uniquee session number
 SESSION="Session-$RANDOM-$RANDOM-$RANDOM"
@@ -29,17 +35,28 @@ mkdir fspf-file/
 cp fspf.sh fspf-file
 
 # ensure that we have an up-to-date image
-docker pull sconecuratedimages/iexec:cli-alpine
+docker pull $CLI_IMAGE
 
 # attest cas before uploading the session file, accept CAS running in debug
 # mode (-d) and outdated TCB (-G)
-docker run -it $CLI_IMAGE scone cas attest --address $CAS_ADDR:8081 --mrenclave $CAS_MRENCLAVE -G -d > cas-ca.pem
+docker run --device=/dev/isgx -it $CLI_IMAGE sh -c "
+scone cas attest -G --only_for_testing-debug  scone-cas.cf $CAS_MRENCLAVE >/dev/null \
+&&  scone cas show-certificate" > cas-ca.pem
 
 # create encrypte filesystem and fspf (file system protection file)
-docker run -it -v $(pwd)/fspf-file:/fspf/fspf-file -v $(pwd)/native-files:/fspf/native-files/ -v $(pwd)/encrypted-files:/fspf/encrypted-files $CLI_IMAGE /fspf/fspf-file/fspf.sh
+docker run --device=/dev/isgx  -it -v $(pwd)/fspf-file:/fspf/fspf-file -v $(pwd)/native-files:/fspf/native-files/ -v $(pwd)/encrypted-files:/fspf/encrypted-files $CLI_IMAGE /fspf/fspf-file/fspf.sh
+
+cat >Dockerfile <<EOF
+FROM $PYTHON_IMAGE
+
+MAINTAINER Christof Fetzer "christof.fetzer@scontain.com"
+
+COPY encrypted-files /fspf/encrypted-files
+COPY fspf-file/fs.fspf /fspf/fs.fspf
+EOF
 
 # create a wordcount image with encrypted wordcount.py
-docker build -t wordcount .
+docker build --pull -t wordcount .
 
 # ensure that we have self-signed client certificate
 
