@@ -1,7 +1,7 @@
 version: '3.2'
 services:
     las:
-        image: sconecuratedimages/helloworld:las-sdk2.5
+        image: sconecuratedimages/kubernetes:las
         devices:
          - "/dev/isgx"
     python:

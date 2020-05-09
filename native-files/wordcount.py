@@ -9,5 +9,5 @@ for word in file.read().split():
     else:
         wordcount[word] += 1
 for k,v in wordcount.items():
-    print k, v
+    print(k, v)
 

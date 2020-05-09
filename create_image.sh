@@ -70,7 +70,7 @@ export SCONE_FSPF_KEY=$(cat native-files/keytag | awk '{print $11}')
 export SCONE_FSPF_TAG=$(cat native-files/keytag | awk '{print $9}')
 
 MRENCLAVE=$PYTHON_MRENCLAVE envsubst '$MRENCLAVE $SCONE_FSPF_KEY $SCONE_FSPF_TAG $SESSION' < session-template.yml > session.yml
-IP=$(host scone.ml | awk -p '{print $4}')
+IP=$(host $CAS_ADDR | awk -p '{print $4}')
 curl -v --cacert cas-ca.pem -s --cert client.pem  --key client-key.pem --resolve cas:8081:$IP --data-binary @session.yml -X POST https://cas:8081/session
 
 
