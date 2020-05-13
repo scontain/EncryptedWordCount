@@ -13,7 +13,8 @@ trap "echo Unexpected error! See log above; exit 1" ERR
 
 # CONFIG Parameters (might change)
 
-export CAS_ADDR=scone-cas.cf
+export SCONE_CAS_ADDR="scone-cas.cf"
+export DEVICE="/dev/sgx"
 
 export SCONE_CAS_IMAGE="sconecuratedimages/services:cas"
 # Not nessecarily access to CAS image, add default
@@ -27,6 +28,17 @@ export PYTHON_MRENCLAVE=`docker pull $PYTHON_IMAGE > /dev/null ; docker run -i -
 # create random and hence, uniquee session number
 SESSION="Session-$RANDOM-$RANDOM-$RANDOM"
 
+# check if SGX device exists
+
+if [[ ! -c "$DEVICE" ]] ; then 
+    export DEVICE_O="DEVICE"
+    export DEVICE="/dev/isgx"
+    if [[ ! -c "$DEVICE" ]] ; then 
+        echo "Neither $DEVICE_O nor $DEVICE exist"
+        exit 1
+    fi
+fi
+
 # create directories for encrypted files and fspf
 rm -rf encrypted-files
 rm -rf fspf-file
@@ -39,12 +51,12 @@ docker pull $CLI_IMAGE
 
 # attest cas before uploading the session file, accept CAS running in debug
 # mode (-d) and outdated TCB (-G)
-docker run --device=/dev/isgx -it $CLI_IMAGE sh -c "
+docker run --device=$DEVICE -it $CLI_IMAGE sh -c "
 scone cas attest -G --only_for_testing-debug  scone-cas.cf $CAS_MRENCLAVE >/dev/null \
 &&  scone cas show-certificate" > cas-ca.pem
 
 # create encrypte filesystem and fspf (file system protection file)
-docker run --device=/dev/isgx  -it -v $(pwd)/fspf-file:/fspf/fspf-file -v $(pwd)/native-files:/fspf/native-files/ -v $(pwd)/encrypted-files:/fspf/encrypted-files $CLI_IMAGE /fspf/fspf-file/fspf.sh
+docker run --device=$DEVICE  -it -v $(pwd)/fspf-file:/fspf/fspf-file -v $(pwd)/native-files:/fspf/native-files/ -v $(pwd)/encrypted-files:/fspf/encrypted-files $CLI_IMAGE /fspf/fspf-file/fspf.sh
 
 cat >Dockerfile <<EOF
 FROM $PYTHON_IMAGE
@@ -70,15 +82,17 @@ export SCONE_FSPF_KEY=$(cat native-files/keytag | awk '{print $11}')
 export SCONE_FSPF_TAG=$(cat native-files/keytag | awk '{print $9}')
 
 MRENCLAVE=$PYTHON_MRENCLAVE envsubst '$MRENCLAVE $SCONE_FSPF_KEY $SCONE_FSPF_TAG $SESSION' < session-template.yml > session.yml
-IP=$(host scone.ml | awk -p '{print $4}')
-curl -v --cacert cas-ca.pem -s --cert client.pem  --key client-key.pem --resolve cas:8081:$IP --data-binary @session.yml -X POST https://cas:8081/session
+# note: this is insecure - use scone session create instead
+curl -v -k -s --cert client.pem  --key client-key.pem  --data-binary @session.yml -X POST https://$SCONE_CAS_ADDR:8081/session
 
 
 # create file with environment variables
 
 cat > myenv << EOF
 export SESSION="$SESSION"
-export SCONE_CAS_ADDR="$IP"
+export SCONE_CAS_ADDR="$SCONE_CAS_ADDR"
+export DEVICE="$DEVICE"
+
 EOF
 
 echo "OK"

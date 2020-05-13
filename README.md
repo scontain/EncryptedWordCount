@@ -28,27 +28,19 @@ This creates a local image `encryptedwordcount` and a session in a SCONE Configu
 *We assume in this demo that the creation of the `wordcount` image is performed on a trusted host.* 
 The execution of the `wordcount` can be performed on an untrusted host.
 
-## Runing the `wordcount` image
+## Running the `wordcount` image
 
 ```bash
 source myenv
 docker-compose up
 ```
 
-Ensure to execute 
+Ensure to execute
 
 ```bash
-docker-compose down
+./cleanup.sh
 ```
 
-before starting it with `docker-compose up` again.
-
-Cleanup after creation of image:
-
-```bash
-rm -rf encrypted-files/ fspf-file myenv client-key.pem client.pem myenv native-files/keytag session.yml
-```
-
-## Contacts
+## Contact
 
 &copy; [scontain.com](http://www.scontain.com), 2020. [Questions or Suggestions?](mailto:info@scontain.com)
